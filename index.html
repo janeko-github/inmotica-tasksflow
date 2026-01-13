@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inmotica TaskFlow - Sistema de Gestión de Tareas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2D3142;
+            --secondary: #4F5D75;
+            --accent: #EF8354;
+            --accent-light: #F4A261;
+            --bg-dark: #1A1B26;
+            --bg-light: #F8F9FA;
+            --text-dark: #2D3142;
+            --text-light: #E8E9ED;
+            --border: #BFC0C0;
+            --success: #06D6A0;
+            --danger: #EF476F;
+            --warning: #FFD166;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: linear-gradient(135deg, #1A1B26 0%, #2D3142 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(47, 54, 64, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 2.5rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            opacity: 0.7;
+            font-weight: 300;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: rgba(79, 93, 117, 0.3);
+            border: 2px solid var(--secondary);
+            color: var(--text-light);
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .tab:hover {
+            background: rgba(79, 93, 117, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 131, 84, 0.3);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 20px rgba(239, 131, 84, 0.4);
+        }
+
+        .content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: rgba(47, 54, 64, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--accent-light);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--secondary);
+            border-radius: 10px;
+            background: rgba(26, 27, 38, 0.6);
+            color: var(--text-light);
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(239, 131, 84, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 131, 84, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(239, 131, 84, 0.6);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.8rem;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .task-list, .user-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .task-item, .user-item {
+            background: rgba(26, 27, 38, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover, .user-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 16px rgba(239, 131, 84, 0.3);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .task-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .task-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 10px;
+        }
+
+        .task-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-user {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .badge-time {
+            background: var(--warning);
+            color: var(--text-dark);
+        }
+
+        .badge-date {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge-status {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-pendiente {
+            background: #BFC0C0;
+            color: var(--text-dark);
+        }
+
+        .badge-en-proceso {
+            background: var(--warning);
+            color: var(--text-dark);
+        }
+
+        .badge-estancado {
+            background: var(--danger);
+            color: white;
+        }
+
+        .badge-terminado {
+            background: var(--success);
+            color: white;
+        }
+
+        .status-section {
+            margin-bottom: 30px;
+        }
+
+        .status-section-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.3rem;
+            color: var(--accent-light);
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(79, 93, 117, 0.3);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-count {
+            background: var(--accent);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(79, 93, 117, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group select {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--primary);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            color: var(--accent);
+        }
+
+        .close {
+            font-size: 2rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .time-entry {
+            background: rgba(26, 27, 38, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .time-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .annotation-item {
+            background: rgba(26, 27, 38, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent-light);
+        }
+
+        .annotation-text {
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .annotation-date {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .report-section {
+            margin-top: 20px;
+        }
+
+        .report-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .task-header {
+                flex-direction: column;
+            }
+
+            .time-inputs, .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                width: 100%;
+            }
+        }
+        
+        /* Estilos para comentarios en registros de tiempo */
+        .time-comment {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: rgba(255, 209, 102, 0.15);
+            border-left: 4px solid #FFD166;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.4;
+        }
+        
+        .time-comment strong {
+            color: #FFD166;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Inmotica TaskFlow</h1>
+            <p class="subtitle">Sistema de Gestión y Control de Tareas</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('tasks')">Tareas</button>
+            <button class="tab" onclick="showTab('users')">Usuarios</button>
+            <button class="tab" onclick="showTab('reports')">Informes</button>
+        </div>
+
+        <!-- SECCIÓN DE TAREAS -->
+        <div id="tasks" class="content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h2 class="card-title" style="margin: 0;">📋 Listado de Tareas</h2>
+                    <button onclick="openCreateTaskModal()" class="btn btn-success">➕ Nueva Tarea</button>
+                </div>
+
+                <!-- Controles de filtrado y ordenamiento -->
+<div class="filter-controls">
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">🔍 Filtrar por Usuario</label>
+                        <select id="filterUser" onchange="applyFiltersAndSort()">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">📊 Ordenar por</label>
+                        <select id="sortBy" onchange="applyFiltersAndSort()">
+                            <option value="number">Número de Tarea</option>
+                            <option value="name">Título</option>
+                            <option value="date">Fecha Máxima Final</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">↕️ Orden</label>
+                        <select id="sortOrder" onchange="applyFiltersAndSort()">
+                            <option value="asc">Ascendente ⬆️</option>
+                            <option value="desc">Descendente ⬇️</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="tasksEmpty" class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>No hay tareas creadas aún</p>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Haz clic en "➕ Nueva Tarea" para comenzar</p>
+                </div>
+                
+                <div id="tasksList"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE USUARIOS -->
+        <div id="users" class="content">
+            <div class="card">
+                <h2 class="card-title">👤 Nuevo Usuario</h2>
+                <form id="userForm">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Nombre del Usuario *</label>
+                            <input type="text" id="userName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="userEmail">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">✓ Crear Usuario</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">👥 Lista de Usuarios</h2>
+                <div id="usersList" class="user-list"></div>
+                <div id="usersEmpty" class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <p>No hay usuarios registrados aún</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE INFORMES -->
+        <div id="reports" class="content">
+            <div class="card">
+                <h2 class="card-title">📊 Informe por Rango de Tareas</h2>
+                <div class="report-inputs">
+                    <div class="form-group">
+                        <label>Desde Tarea Nº</label>
+                        <input type="number" id="reportFromTask" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Hasta Tarea Nº</label>
+                        <input type="number" id="reportToTask" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>🔍 Filtrar por Usuario</label>
+                        <select id="reportTaskUser">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="generateReport('excel')" class="btn btn-success">📗 Generar Excel</button>
+                    <button onclick="generateReport('pdf')" class="btn btn-danger">📕 Generar PDF</button>
+                </div>
+                <div id="reportLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Generando informe...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">📅 Informe por Rango de Fechas</h2>
+                <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+                    Genera un informe consolidado de todas las tareas realizadas entre dos fechas
+                </p>
+                <div class="report-inputs">
+                    <div class="form-group">
+                        <label>Desde Fecha</label>
+                        <input type="date" id="reportFromDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Hasta Fecha</label>
+                        <input type="date" id="reportToDate">
+                    </div>
+                    <div class="form-group">
+                        <label>🔍 Filtrar por Usuario</label>
+                        <select id="reportDateUser">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="generateDateReport('excel')" class="btn btn-success">📗 Generar Excel</button>
+                    <button onclick="generateDateReport('pdf')" class="btn btn-danger">📕 Generar PDF</button>
+                </div>
+                <div id="dateReportLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Generando informe por fechas...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">⚠️ Informe de Tareas No Terminadas</h2>
+                <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+                    Genera un informe de todas las tareas pendientes, en proceso o estancadas (excluye terminadas)
+                </p>
+                <div class="report-inputs">
+                    <div class="form-group">
+                        <label>🔍 Filtrar por Usuario</label>
+                        <select id="reportPendingUser">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="generatePendingReport('excel')" class="btn btn-success">📗 Generar Excel</button>
+                    <button onclick="generatePendingReport('pdf')" class="btn btn-danger">📕 Generar PDF</button>
+                </div>
+                <div id="pendingReportLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Generando informe de pendientes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA DETALLES DE TAREA -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTaskTitle">Detalles de Tarea</h2>
+                <span class="close" onclick="closeModal('taskModal')">&times;</span>
+            </div>
+            <div id="modalTaskContent"></div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CREAR TAREA -->
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ Nueva Tarea</h2>
+                <span class="close" onclick="closeModal('createTaskModal')">&times;</span>
+            </div>
+            <form id="taskForm">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Nombre de la Tarea *</label>
+                        <input type="text" id="taskName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a Usuario *</label>
+                        <select id="taskUser" required>
+                            <option value="">Seleccionar usuario...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado de la Tarea</label>
+                    <select id="taskStatus">
+                        <option value="Pendiente">⏳ Pendiente</option>
+                        <option value="En proceso">🔄 En proceso</option>
+                        <option value="Estancado">⚠️ Estancado</option>
+                        <option value="Terminado">✅ Terminado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="taskDescription"></textarea>
+                </div>
+
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Meses)</label>
+                        <input type="number" id="taskMonths" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Días)</label>
+                        <input type="number" id="taskDays" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Minutos)</label>
+                        <input type="number" id="taskMinutes" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Total en Minutos</label>
+                        <input type="number" id="taskTotalMinutes" readonly style="background: rgba(239, 131, 84, 0.2);">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha Máxima Final</label>
+                    <input type="date" id="taskMaxDate">
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-success">✓ Crear Tarea</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createTaskModal')">✖ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA EDITAR TAREA -->
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ Editar Tarea</h2>
+                <span class="close" onclick="closeModal('editTaskModal')">&times;</span>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                
+                <div class="form-group">
+                    <label>Número de Tarea</label>
+                    <input type="text" id="editTaskNumber" readonly style="background: rgba(239, 131, 84, 0.2); cursor: not-allowed;">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Nombre de la Tarea *</label>
+                        <input type="text" id="editTaskName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a Usuario *</label>
+                        <select id="editTaskUser" required>
+                            <option value="">Seleccionar usuario...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado de la Tarea</label>
+                    <select id="editTaskStatus">
+                        <option value="Pendiente">⏳ Pendiente</option>
+                        <option value="En proceso">🔄 En proceso</option>
+                        <option value="Estancado">⚠️ Estancado</option>
+                        <option value="Terminado">✅ Terminado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="editTaskDescription"></textarea>
+                </div>
+
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Meses)</label>
+                        <input type="number" id="editTaskMonths" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Días)</label>
+                        <input type="number" id="editTaskDays" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Tiempo Máximo (Minutos)</label>
+                        <input type="number" id="editTaskMinutes" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Total en Minutos</label>
+                        <input type="number" id="editTaskTotalMinutes" readonly style="background: rgba(239, 131, 84, 0.2);">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha Máxima Final</label>
+                    <input type="date" id="editTaskMaxDate">
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editTaskModal')">✖ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
