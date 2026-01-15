@@ -50,10 +50,10 @@ trap cleanup SIGINT SIGTERM
 
 # Abrir navegador (opcional)
 if command -v xdg-open &> /dev/null; then
-    xdg-open http://localhost:8000/index.html &> /dev/null
+    xdg-open http://localhost:7000/index.html &> /dev/null
 elif command -v open &> /dev/null; then
-    open http://localhost:8000/index.html &> /dev/null
+    open http://localhost:7000/index.html &> /dev/null
 fi
 
 # Iniciar servidor HTTP
-python3 -m http.server 8000
+python3 -m http.server 7000

@@ -61,6 +61,11 @@ function showTab(tabName) {
     
     // Activar tab seleccionado
     event.target.classList.add('active');
+    
+    // Inicializar tab de registros si se selecciona
+    if (tabName === 'entries') {
+        initializeEntriesTab();
+    }
 }
 
 // Calcular tiempo total en minutos
@@ -101,6 +106,7 @@ function updateUserFilters() {
     updateUserFilter('reportTaskUser');
     updateUserFilter('reportDateUser');
     updateUserFilter('reportPendingUser');
+    updateUserFilter('reportEntriesUser');  // NUEVO
 }
 
 function updateUserFilter(selectId) {
@@ -695,8 +701,14 @@ async function openTaskDetails(taskId) {
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-    currentTaskId = null;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        // Manejar modales con clase 'active'
+        modal.classList.remove('active');
+        // Manejar modales con style.display
+        modal.style.display = 'none';
+        currentTaskId = null;
+    }
 }
 
 // ==================== FORMULARIOS COLAPSABLES ====================
@@ -1198,7 +1210,489 @@ function formatDateTime(dateTimeString) {
 // Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
+        // Cerrar modales con clase 'active'
         event.target.classList.remove('active');
+        // Cerrar modales con style.display
+        event.target.style.display = 'none';
         currentTaskId = null;
     }
+}
+
+// ==================== INFORME DE REGISTROS DE TIEMPO ====================
+
+async function generateTimeEntriesReport(format) {
+    const fromDate = document.getElementById('reportEntriesFromDate').value;
+    const toDate = document.getElementById('reportEntriesToDate').value;
+    const userId = document.getElementById('reportEntriesUser').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Por favor ingresa el rango de fechas (desde/hasta)');
+        return;
+    }
+    
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert('La fecha inicial debe ser anterior o igual a la fecha final');
+        return;
+    }
+    
+    const loading = document.getElementById('entriesReportLoading');
+    loading.style.display = 'block';
+    
+    try {
+        let url = `${API_URL}/reports/timeentries/${format}?from=${fromDate}&to=${toDate}`;
+        if (userId) {
+            url += `&user_id=${userId}`;
+        }
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const userSuffix = userId ? `_usuario${userId}` : '';
+            a.download = `informe_registros_${fromDate}_${toDate}${userSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            alert('Informe de registros generado exitosamente');
+        } else {
+            const errorData = await response.json();
+            alert(errorData.detail || 'Error al generar informe');
+        }
+    } catch (error) {
+        console.error('Error generando informe de registros:', error);
+        alert('Error al generar informe de registros');
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// ==================== UTILIDADES ====================
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// ==================== SECCIÓN DE REGISTROS ====================
+
+async function loadTimeEntries() {
+    const fromDate = document.getElementById('filterEntriesFromDate').value;
+    const toDate = document.getElementById('filterEntriesToDate').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Por favor selecciona el rango de fechas');
+        return;
+    }
+    
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert('La fecha inicial debe ser anterior o igual a la fecha final');
+        return;
+    }
+    
+    const userId = document.getElementById('filterEntriesUser').value;
+    const hasEnd = document.getElementById('filterEntriesHasEnd').value;
+    const status = document.getElementById('filterEntriesTaskStatus').value;
+    
+    const loading = document.getElementById('loadingEntries');
+    const entriesList = document.getElementById('entriesList');
+    const entriesEmpty = document.getElementById('entriesEmpty');
+    const totalSection = document.getElementById('totalSection');
+    
+    loading.style.display = 'block';
+    entriesList.innerHTML = '';
+    entriesEmpty.style.display = 'none';
+    totalSection.style.display = 'none';
+    
+    try {
+        let url = `${API_URL}/timeentries/list?from_date=${fromDate}&to_date=${toDate}`;
+        if (userId) url += `&user_id=${userId}`;
+        if (hasEnd !== 'all') url += `&has_end=${hasEnd}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar registros');
+        }
+        
+        const entries = await response.json();
+        
+        document.getElementById('entriesCount').textContent = `${entries.length} registro${entries.length !== 1 ? 's' : ''}`;
+        
+        if (entries.length === 0) {
+            entriesEmpty.style.display = 'block';
+        } else {
+            let totalMinutes = 0;
+            
+            entries.forEach(entry => {
+                const entryCard = createEntryCard(entry);
+                entriesList.appendChild(entryCard);
+                
+                // Calcular duración
+                let duration = entry.duration_minutes;
+                if (!duration && entry.start_time) {
+                    const startDt = new Date(entry.start_time);
+                    const endOfDay = new Date(startDt);
+                    endOfDay.setHours(20, 0, 0, 0);
+                    duration = Math.floor((endOfDay - startDt) / 60000);
+                }
+                if (duration) {
+                    totalMinutes += duration;
+                }
+            });
+            
+            // Mostrar totales
+            document.getElementById('totalMinutes').textContent = totalMinutes;
+            document.getElementById('totalHours').textContent = (totalMinutes / 60).toFixed(2);
+            totalSection.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error cargando registros:', error);
+        entriesEmpty.style.display = 'block';
+        document.getElementById('entriesEmpty').innerHTML = `
+            <div class="empty-state-icon">⚠️</div>
+            <p>Error al cargar registros</p>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">${error.message}</p>
+        `;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+function createEntryCard(entry) {
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    
+    // Marcar registros sin fin
+    if (!entry.end_time) {
+        card.classList.add('no-end');
+    }
+    
+    // Calcular fecha/hora de fin
+    let endTimeDisplay = '';
+    let duration = entry.duration_minutes;
+    
+    if (entry.end_time) {
+        endTimeDisplay = formatDateTime(entry.end_time);
+    } else {
+        const startDt = new Date(entry.start_time);
+        const endOfDay = new Date(startDt);
+        endOfDay.setHours(20, 0, 0, 0);
+        endTimeDisplay = formatDateTime(endOfDay.toISOString());
+        duration = Math.floor((endOfDay - startDt) / 60000);
+    }
+    
+    // Estado de la tarea
+    const statusClass = entry.task_status.toLowerCase().replace(' ', '');
+    
+    card.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-id">#${entry.id}</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="status-badge ${statusClass}">${entry.task_status}</span>
+                <button class="btn-edit-entry" onclick="openEditEntryModal(${entry.id})" title="Editar registro">
+                    ✏️
+                </button>
+            </div>
+        </div>
+        
+        <div class="entry-task">
+            Tarea #${entry.task_number}: ${escapeHtml(entry.task_name)}
+        </div>
+        
+        <div class="entry-details">
+            <div class="entry-detail">
+                <span class="entry-detail-label">⏰ Inicio</span>
+                <span class="entry-detail-value">${formatDateTime(entry.start_time)}</span>
+            </div>
+            
+            <div class="entry-detail">
+                <span class="entry-detail-label">⏱️ Fin</span>
+                <span class="entry-detail-value ${!entry.end_time ? 'no-end' : ''}">${endTimeDisplay}</span>
+            </div>
+            
+            <div class="entry-detail">
+                <span class="entry-detail-label">⏳ Duración</span>
+                <span class="entry-detail-value">
+                    <span class="duration-badge">
+                        ${duration || 0} min (${((duration || 0) / 60).toFixed(2)} h)
+                    </span>
+                </span>
+            </div>
+            
+            <div class="entry-detail">
+                <span class="entry-detail-label">👤 Usuario</span>
+                <span class="entry-detail-value">${escapeHtml(entry.user_name || 'N/A')}</span>
+            </div>
+        </div>
+        
+        ${entry.comment ? `
+            <div class="entry-comment">
+                <div class="entry-comment-label">💬 Comentario</div>
+                <div class="entry-comment-text">${escapeHtml(entry.comment)}</div>
+            </div>
+        ` : ''}
+    `;
+    
+    return card;
+}
+
+async function exportEntriesToExcel() {
+    const fromDate = document.getElementById('filterEntriesFromDate').value;
+    const toDate = document.getElementById('filterEntriesToDate').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Por favor selecciona el rango de fechas');
+        return;
+    }
+    
+    const userId = document.getElementById('filterEntriesUser').value;
+    const hasEnd = document.getElementById('filterEntriesHasEnd').value;
+    const status = document.getElementById('filterEntriesTaskStatus').value;
+    
+    try {
+        let url = `${API_URL}/timeentries/export/excel?from_date=${fromDate}&to_date=${toDate}`;
+        if (userId) url += `&user_id=${userId}`;
+        if (hasEnd !== 'all') url += `&has_end=${hasEnd}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            
+            let filename = `registros_${fromDate}_a_${toDate}`;
+            if (userId) filename += `_usuario${userId}`;
+            if (hasEnd === 'yes') filename += '_finalizados';
+            if (hasEnd === 'no') filename += '_sinFinalizar';
+            if (status) filename += `_estado${status.replace(' ', '')}`;
+            filename += '.xlsx';
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+            alert('Archivo Excel generado exitosamente');
+        } else {
+            const errorData = await response.json();
+            alert(errorData.detail || 'Error al generar Excel');
+        }
+    } catch (error) {
+        console.error('Error exportando a Excel:', error);
+        alert('Error al exportar a Excel');
+    }
+}
+
+async function exportEntriesToPDF() {
+    const fromDate = document.getElementById('filterEntriesFromDate').value;
+    const toDate = document.getElementById('filterEntriesToDate').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Por favor selecciona el rango de fechas');
+        return;
+    }
+    
+    const userId = document.getElementById('filterEntriesUser').value;
+    const hasEnd = document.getElementById('filterEntriesHasEnd').value;
+    const status = document.getElementById('filterEntriesTaskStatus').value;
+    
+    try {
+        let url = `${API_URL}/timeentries/export/pdf?from_date=${fromDate}&to_date=${toDate}`;
+        if (userId) url += `&user_id=${userId}`;
+        if (hasEnd !== 'all') url += `&has_end=${hasEnd}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            
+            let filename = `registros_${fromDate}_a_${toDate}`;
+            if (userId) filename += `_usuario${userId}`;
+            if (hasEnd === 'yes') filename += '_finalizados';
+            if (hasEnd === 'no') filename += '_sinFinalizar';
+            if (status) filename += `_estado${status.replace(' ', '')}`;
+            filename += '.pdf';
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+            alert('Archivo PDF generado exitosamente');
+        } else {
+            const errorData = await response.json();
+            alert(errorData.detail || 'Error al generar PDF');
+        }
+    } catch (error) {
+        console.error('Error exportando a PDF:', error);
+        alert('Error al exportar a PDF');
+    }
+}
+
+// Inicializar fechas por defecto cuando se activa el tab de Registros
+function initializeEntriesTab() {
+    // Establecer fechas por defecto (últimos 7 días)
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    
+    document.getElementById('filterEntriesToDate').value = todayStr;
+    document.getElementById('filterEntriesFromDate').value = weekAgoStr;
+    
+    // Poblar selector de usuarios
+    updateUserFilter('filterEntriesUser');
+    
+    // Cargar registros
+    loadTimeEntries();
+}
+
+// ==================== EDITAR REGISTRO DE TIEMPO ====================
+
+async function openEditEntryModal(entryId) {
+    try {
+        // Obtener datos del registro
+        const response = await fetch(`${API_URL}/timeentries/${entryId}`);
+        if (!response.ok) {
+            throw new Error('No se pudo cargar el registro');
+        }
+        
+        const entry = await response.json();
+        
+        // Llenar el formulario
+        document.getElementById('editEntryId').value = entry.id;
+        document.getElementById('editEntryTaskName').value = `#${entry.task_number}: ${entry.task_name}`;
+        
+        // Convertir fechas a formato datetime-local (YYYY-MM-DDTHH:mm)
+        if (entry.start_time) {
+            const startDate = new Date(entry.start_time);
+            document.getElementById('editEntryStartTime').value = formatDateTimeLocal(startDate);
+        }
+        
+        if (entry.end_time) {
+            const endDate = new Date(entry.end_time);
+            document.getElementById('editEntryEndTime').value = formatDateTimeLocal(endDate);
+        } else {
+            // Si no tiene fecha fin, poner la fecha/hora actual
+            const now = new Date();
+            document.getElementById('editEntryEndTime').value = formatDateTimeLocal(now);
+        }
+        
+        // Mostrar duración calculada
+        document.getElementById('editEntryDuration').value = entry.duration_minutes || 0;
+        
+        // Comentario
+        document.getElementById('editEntryComment').value = entry.comment || '';
+        
+        // Abrir modal
+        document.getElementById('editEntryModal').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error abriendo modal de edición:', error);
+        alert('Error al cargar el registro: ' + error.message);
+    }
+}
+
+// Manejar envío del formulario de edición
+document.getElementById('editEntryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const entryId = document.getElementById('editEntryId').value;
+    const startTime = document.getElementById('editEntryStartTime').value;
+    const endTime = document.getElementById('editEntryEndTime').value;
+    const comment = document.getElementById('editEntryComment').value;
+    
+    if (!startTime) {
+        alert('La fecha de inicio es obligatoria');
+        return;
+    }
+    
+    try {
+        const data = {
+            start_time: new Date(startTime).toISOString(),
+            end_time: endTime ? new Date(endTime).toISOString() : null,
+            comment: comment
+        };
+        
+        const response = await fetch(`${API_URL}/timeentries/${entryId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            alert('Registro actualizado exitosamente');
+            document.getElementById('editEntryModal').style.display = 'none'; // Cerrar modal explícitamente
+            loadTimeEntries(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            alert('Error al actualizar: ' + (errorData.detail || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error actualizando registro:', error);
+        alert('Error al actualizar el registro');
+    }
+});
+
+async function deleteTimeEntry() {
+    const entryId = document.getElementById('editEntryId').value;
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar este registro de tiempo?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/timeentries/${entryId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('Registro eliminado exitosamente');
+            document.getElementById('editEntryModal').style.display = 'none'; // Cerrar modal explícitamente
+            loadTimeEntries(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            alert('Error al eliminar: ' + (errorData.detail || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error eliminando registro:', error);
+        alert('Error al eliminar el registro');
+    }
+}
+
+// Función auxiliar para formatear fecha a datetime-local
+function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 }

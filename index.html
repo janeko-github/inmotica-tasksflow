@@ -576,6 +576,163 @@
             color: #FFD166;
             margin-right: 5px;
         }
+
+        /* Estilos para sección de Registros */
+        .entry-card {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border: 1px solid rgba(239, 131, 84, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .entry-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 131, 84, 0.2);
+            border-color: rgba(239, 131, 84, 0.6);
+        }
+
+        .entry-card.no-end {
+            border-left: 4px solid #e53e3e;
+            background: linear-gradient(135deg, #3d2020 0%, #2d1515 100%);
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .entry-id {
+            font-size: 0.9rem;
+            color: #EF8354;
+            font-weight: bold;
+        }
+
+        .entry-task {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .entry-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .entry-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .entry-detail-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .entry-detail-value {
+            font-size: 1rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .entry-detail-value.no-end {
+            color: #fc8181;
+            font-weight: bold;
+        }
+
+        .entry-detail-value.no-end::after {
+            content: " *";
+            color: #e53e3e;
+            font-size: 1.2em;
+        }
+
+        .entry-comment {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 209, 102, 0.1);
+            border-left: 3px solid #FFD166;
+            border-radius: 6px;
+        }
+
+        .entry-comment-label {
+            font-size: 0.85rem;
+            color: #FFD166;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .entry-comment-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-badge.pendiente {
+            background-color: rgba(237, 137, 54, 0.2);
+            color: #ED8936;
+        }
+
+        .status-badge.enproceso {
+            background-color: rgba(56, 178, 172, 0.2);
+            color: #38B2AC;
+        }
+
+        .status-badge.estancado {
+            background-color: rgba(229, 62, 62, 0.2);
+            color: #E53E3E;
+        }
+
+        .status-badge.terminado {
+            background-color: rgba(72, 187, 120, 0.2);
+            color: #48BB78;
+        }
+
+        .duration-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(255, 209, 102, 0.2);
+            border-radius: 20px;
+            font-weight: bold;
+            color: #FFD166;
+        }
+
+        .btn-edit-entry {
+            background: rgba(239, 131, 84, 0.2);
+            border: 1px solid #EF8354;
+            color: #EF8354;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit-entry:hover {
+            background: #EF8354;
+            color: white;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -588,6 +745,7 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('tasks')">Tareas</button>
             <button class="tab" onclick="showTab('users')">Usuarios</button>
+            <button class="tab" onclick="showTab('entries')">Registros</button>
             <button class="tab" onclick="showTab('reports')">Informes</button>
         </div>
 
@@ -661,6 +819,81 @@
                 <div id="usersEmpty" class="empty-state">
                     <div class="empty-state-icon">👥</div>
                     <p>No hay usuarios registrados aún</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE REGISTROS -->
+        <div id="entries" class="content">
+            <div class="card">
+                <h2 class="card-title">🔍 Filtros de Búsqueda de Registros</h2>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">📅 Desde Fecha</label>
+                        <input type="date" id="filterEntriesFromDate" onchange="loadTimeEntries()">
+                    </div>
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">📅 Hasta Fecha</label>
+                        <input type="date" id="filterEntriesToDate" onchange="loadTimeEntries()">
+                    </div>
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">👤 Usuario</label>
+                        <select id="filterEntriesUser" onchange="loadTimeEntries()">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">⏰ Fecha de Fin</label>
+                        <select id="filterEntriesHasEnd" onchange="loadTimeEntries()">
+                            <option value="all">Todos</option>
+                            <option value="yes">Con fecha fin</option>
+                            <option value="no">Sin fecha fin (en curso)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label style="font-size: 0.85rem; margin-bottom: 5px;">🏷️ Estado de Tarea</label>
+                        <select id="filterEntriesTaskStatus" onchange="loadTimeEntries()">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="Estancado">Estancado</option>
+                            <option value="Terminado">Terminado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="loadTimeEntries()" class="btn btn-primary">🔄 Actualizar</button>
+                    <button onclick="exportEntriesToExcel()" class="btn btn-success">📗 Exportar Excel</button>
+                    <button onclick="exportEntriesToPDF()" class="btn btn-danger">📕 Exportar PDF</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 class="card-title" style="margin: 0;">📊 Listado de Registros</h2>
+                    <span id="entriesCount" style="background: rgba(239, 131, 84, 0.2); color: #EF8354; padding: 6px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;">0 registros</span>
+                </div>
+                
+                <div id="loadingEntries" class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando registros...</p>
+                </div>
+
+                <div id="entriesEmpty" class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>No se encontraron registros</p>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Selecciona un rango de fechas y filtros</p>
+                </div>
+
+                <div id="entriesList"></div>
+
+                <div id="totalSection" style="display: none; margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #2c5282 0%, #2a4365 100%); border-radius: 12px; border: 2px solid #FFD166;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.8); font-weight: 600;">⏱️ Duración Total:</span>
+                        <span id="totalMinutes" style="font-size: 2rem; color: #FFD166; font-weight: bold;">0</span>
+                        <span style="font-size: 1rem; color: rgba(255, 255, 255, 0.6);">minutos</span>
+                        <span style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); font-style: italic;">(<span id="totalHours">0</span> horas)</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -776,6 +1009,37 @@
                 <div id="pendingReportLoading" class="loading">
                     <div class="spinner"></div>
                     <p style="margin-top: 15px;">Generando informe de pendientes...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">⏱️ Informe de Registros de Tiempo</h2>
+                <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+                    Genera un informe detallado de todos los registros de tiempo en un periodo, con información de tarea, duración y comentarios
+                </p>
+                <div class="report-inputs">
+                    <div class="form-group">
+                        <label>Desde Fecha</label>
+                        <input type="date" id="reportEntriesFromDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Hasta Fecha</label>
+                        <input type="date" id="reportEntriesToDate">
+                    </div>
+                    <div class="form-group">
+                        <label>🔍 Filtrar por Usuario</label>
+                        <select id="reportEntriesUser">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="generateTimeEntriesReport('excel')" class="btn btn-success">📗 Generar Excel</button>
+                    <button onclick="generateTimeEntriesReport('pdf')" class="btn btn-danger">📕 Generar PDF</button>
+                </div>
+                <div id="entriesReportLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Generando informe de registros...</p>
                 </div>
             </div>
         </div>
@@ -930,6 +1194,53 @@
                 <div class="actions">
                     <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editTaskModal')">✖ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA EDITAR REGISTRO DE TIEMPO -->
+    <div id="editEntryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ Editar Registro de Tiempo</h2>
+                <span class="close" onclick="closeModal('editEntryModal')">&times;</span>
+            </div>
+            <form id="editEntryForm">
+                <input type="hidden" id="editEntryId">
+                
+                <div class="form-group">
+                    <label>📋 Tarea</label>
+                    <input type="text" id="editEntryTaskName" disabled style="background: rgba(255,255,255,0.1); cursor: not-allowed;">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>⏰ Fecha y Hora de Inicio *</label>
+                        <input type="datetime-local" id="editEntryStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>⏱️ Fecha y Hora de Fin</label>
+                        <input type="datetime-local" id="editEntryEndTime">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Dejar vacío si está en curso</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>⏳ Duración (minutos)</label>
+                    <input type="number" id="editEntryDuration" disabled style="background: rgba(255,255,255,0.1); cursor: not-allowed;">
+                    <small style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Se calcula automáticamente</small>
+                </div>
+
+                <div class="form-group">
+                    <label>💬 Comentario</label>
+                    <textarea id="editEntryComment" rows="4" placeholder="Descripción del trabajo realizado..."></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">✓ Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editEntryModal')">✖ Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteTimeEntry()" style="margin-left: auto;">🗑️ Eliminar</button>
                 </div>
             </form>
         </div>
