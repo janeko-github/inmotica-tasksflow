@@ -432,7 +432,8 @@ if __name__ == "__main__":
 async def generate_excel_report(
     from_task: int = Query(..., alias='from'),
     to_task: int = Query(..., alias='to'),
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    status: Optional[str] = None
 ):
     """Generar informe en Excel por rango de tareas"""
     try:
@@ -441,7 +442,7 @@ async def generate_excel_report(
         
         conn = get_db()
         
-        # Query con filtro opcional de usuario
+        # Query con filtro opcional de usuario y estado
         query = '''
             SELECT t.*, u.name as user_name
             FROM tasks t
@@ -453,6 +454,10 @@ async def generate_excel_report(
         if user_id:
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
+        
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
         
         query += ' ORDER BY t.task_number'
         
@@ -541,7 +546,8 @@ async def generate_excel_report(
         
         # Guardar archivo
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_tareas_{from_task}-{to_task}{user_suffix}.xlsx'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_tareas_{from_task}-{to_task}{user_suffix}{status_suffix}.xlsx'
         wb.save(filename)
         
         return FileResponse(
@@ -558,7 +564,8 @@ async def generate_excel_report(
 async def generate_pdf_report(
     from_task: int = Query(..., alias='from'),
     to_task: int = Query(..., alias='to'),
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    status: Optional[str] = None
 ):
     """Generar informe en PDF por rango de tareas"""
     try:
@@ -583,6 +590,10 @@ async def generate_pdf_report(
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
         
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
+        
         query += ' ORDER BY t.task_number'
         
         tasks = conn.execute(query, params).fetchall()
@@ -592,7 +603,8 @@ async def generate_pdf_report(
             raise HTTPException(status_code=404, detail='No se encontraron tareas en ese rango')
         
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_tareas_{from_task}-{to_task}{user_suffix}.pdf'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_tareas_{from_task}-{to_task}{user_suffix}{status_suffix}.pdf'
         doc = SimpleDocTemplate(filename, pagesize=letter)
         story = []
         styles = getSampleStyleSheet()
@@ -702,7 +714,8 @@ async def generate_pdf_report(
 async def generate_date_excel_report(
     from_date: str = Query(..., alias='from'),
     to_date: str = Query(..., alias='to'),
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    status: Optional[str] = None
 ):
     """Generar informe en Excel por rango de fechas"""
     try:
@@ -722,6 +735,10 @@ async def generate_date_excel_report(
         if user_id:
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
+        
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
         
         query += ' ORDER BY t.created_at'
         
@@ -807,7 +824,8 @@ async def generate_date_excel_report(
         conn.close()
         
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_fechas_{from_date}_a_{to_date}{user_suffix}.xlsx'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_fechas_{from_date}_a_{to_date}{user_suffix}{status_suffix}.xlsx'
         wb.save(filename)
         
         return FileResponse(
@@ -824,7 +842,8 @@ async def generate_date_excel_report(
 async def generate_date_pdf_report(
     from_date: str = Query(..., alias='from'),
     to_date: str = Query(..., alias='to'),
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    status: Optional[str] = None
 ):
     """Generar informe en PDF por rango de fechas"""
     try:
@@ -849,6 +868,10 @@ async def generate_date_pdf_report(
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
         
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
+        
         query += ' ORDER BY t.created_at'
         
         tasks = conn.execute(query, params).fetchall()
@@ -858,7 +881,8 @@ async def generate_date_pdf_report(
             raise HTTPException(status_code=404, detail='No se encontraron tareas en ese rango de fechas')
         
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_fechas_{from_date}_a_{to_date}{user_suffix}.pdf'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_fechas_{from_date}_a_{to_date}{user_suffix}{status_suffix}.pdf'
         doc = SimpleDocTemplate(filename, pagesize=letter)
         story = []
         styles = getSampleStyleSheet()
@@ -954,7 +978,7 @@ async def generate_date_pdf_report(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/api/reports/pending/excel')
-async def generate_pending_excel_report(user_id: Optional[int] = None):
+async def generate_pending_excel_report(user_id: Optional[int] = None, status: Optional[str] = None):
     """Generar informe en Excel de tareas pendientes"""
     try:
         from openpyxl import Workbook
@@ -973,6 +997,10 @@ async def generate_pending_excel_report(user_id: Optional[int] = None):
         if user_id:
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
+        
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
         
         query += ' ORDER BY t.task_number'
         
@@ -1050,7 +1078,8 @@ async def generate_pending_excel_report(user_id: Optional[int] = None):
         conn.close()
         
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_pendientes{user_suffix}.xlsx'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_pendientes{user_suffix}{status_suffix}.xlsx'
         wb.save(filename)
         
         return FileResponse(
@@ -1064,7 +1093,7 @@ async def generate_pending_excel_report(user_id: Optional[int] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/api/reports/pending/pdf')
-async def generate_pending_pdf_report(user_id: Optional[int] = None):
+async def generate_pending_pdf_report(user_id: Optional[int] = None, status: Optional[str] = None):
     """Generar informe en PDF de tareas pendientes"""
     try:
         from reportlab.lib.pagesizes import letter
@@ -1088,6 +1117,10 @@ async def generate_pending_pdf_report(user_id: Optional[int] = None):
             query += ' AND t.user_id = ?'
             params.append(int(user_id))
         
+        if status:
+            query += ' AND t.status = ?'
+            params.append(status)
+        
         query += ' ORDER BY t.task_number'
         
         tasks = conn.execute(query, params).fetchall()
@@ -1097,7 +1130,8 @@ async def generate_pending_pdf_report(user_id: Optional[int] = None):
             raise HTTPException(status_code=404, detail='No se encontraron tareas pendientes')
         
         user_suffix = f'_usuario{user_id}' if user_id else ''
-        filename = f'informe_pendientes{user_suffix}.pdf'
+        status_suffix = f'_estado{status.replace(" ", "")}' if status else ''
+        filename = f'informe_pendientes{user_suffix}{status_suffix}.pdf'
         doc = SimpleDocTemplate(filename, pagesize=letter)
         story = []
         styles = getSampleStyleSheet()

@@ -1009,6 +1009,7 @@ async function generateReport(format) {
     const fromTask = document.getElementById('reportFromTask').value;
     const toTask = document.getElementById('reportToTask').value;
     const userId = document.getElementById('reportTaskUser').value;
+    const status = document.getElementById('reportTaskStatus').value;
     
     if (!fromTask || !toTask) {
         alert('Por favor ingresa el rango de tareas (desde/hasta)');
@@ -1028,6 +1029,9 @@ async function generateReport(format) {
         if (userId) {
             url += `&user_id=${userId}`;
         }
+        if (status) {
+            url += `&status=${encodeURIComponent(status)}`;
+        }
         
         const response = await fetch(url);
         
@@ -1037,7 +1041,8 @@ async function generateReport(format) {
             const a = document.createElement('a');
             a.href = url;
             const userSuffix = userId ? `_usuario${userId}` : '';
-            a.download = `informe_tareas_${fromTask}-${toTask}${userSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            const statusSuffix = status ? `_estado${status.replace(/ /g, '')}` : '';
+            a.download = `informe_tareas_${fromTask}-${toTask}${userSuffix}${statusSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1059,6 +1064,7 @@ async function generateDateReport(format) {
     const fromDate = document.getElementById('reportFromDate').value;
     const toDate = document.getElementById('reportToDate').value;
     const userId = document.getElementById('reportDateUser').value;
+    const status = document.getElementById('reportDateStatus').value;
     
     if (!fromDate || !toDate) {
         alert('Por favor ingresa el rango de fechas (desde/hasta)');
@@ -1078,6 +1084,9 @@ async function generateDateReport(format) {
         if (userId) {
             url += `&user_id=${userId}`;
         }
+        if (status) {
+            url += `&status=${encodeURIComponent(status)}`;
+        }
         
         const response = await fetch(url);
         
@@ -1087,7 +1096,8 @@ async function generateDateReport(format) {
             const a = document.createElement('a');
             a.href = url;
             const userSuffix = userId ? `_usuario${userId}` : '';
-            a.download = `informe_fechas_${fromDate}_${toDate}${userSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            const statusSuffix = status ? `_estado${status.replace(/ /g, '')}` : '';
+            a.download = `informe_fechas_${fromDate}_${toDate}${userSuffix}${statusSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1108,14 +1118,22 @@ async function generateDateReport(format) {
 
 async function generatePendingReport(format) {
     const userId = document.getElementById('reportPendingUser').value;
+    const status = document.getElementById('reportPendingStatus').value;
     
     const loading = document.getElementById('pendingReportLoading');
     loading.style.display = 'block';
     
     try {
         let url = `${API_URL}/reports/pending/${format}`;
+        const params = [];
         if (userId) {
-            url += `?user_id=${userId}`;
+            params.push(`user_id=${userId}`);
+        }
+        if (status) {
+            params.push(`status=${encodeURIComponent(status)}`);
+        }
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         }
         
         const response = await fetch(url);
@@ -1127,7 +1145,8 @@ async function generatePendingReport(format) {
             a.href = url;
             const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '');
             const userSuffix = userId ? `_usuario${userId}` : '';
-            a.download = `informe_tareas_pendientes_${timestamp}${userSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            const statusSuffix = status ? `_estado${status.replace(/ /g, '')}` : '';
+            a.download = `informe_tareas_pendientes_${timestamp}${userSuffix}${statusSuffix}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

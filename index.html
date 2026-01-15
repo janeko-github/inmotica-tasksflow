@@ -684,6 +684,16 @@
                             <option value="">Todos los usuarios</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>🏷️ Filtrar por Estado</label>
+                        <select id="reportTaskStatus">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="Estancado">Estancado</option>
+                            <option value="Terminado">Terminado</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="actions">
                     <button onclick="generateReport('excel')" class="btn btn-success">📗 Generar Excel</button>
@@ -715,6 +725,16 @@
                             <option value="">Todos los usuarios</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>🏷️ Filtrar por Estado</label>
+                        <select id="reportDateStatus">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="Estancado">Estancado</option>
+                            <option value="Terminado">Terminado</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="actions">
                     <button onclick="generateDateReport('excel')" class="btn btn-success">📗 Generar Excel</button>
@@ -729,13 +749,23 @@
             <div class="card">
                 <h2 class="card-title">⚠️ Informe de Tareas No Terminadas</h2>
                 <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
-                    Genera un informe de todas las tareas pendientes, en proceso o estancadas (excluye terminadas)
+                    Genera un informe de tareas filtradas por estado (por defecto excluye terminadas)
                 </p>
                 <div class="report-inputs">
                     <div class="form-group">
                         <label>🔍 Filtrar por Usuario</label>
                         <select id="reportPendingUser">
                             <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🏷️ Filtrar por Estado</label>
+                        <select id="reportPendingStatus">
+                            <option value="">Todos excepto Terminadas</option>
+                            <option value="Pendiente">Solo Pendiente</option>
+                            <option value="En proceso">Solo En proceso</option>
+                            <option value="Estancado">Solo Estancado</option>
+                            <option value="Terminado">Solo Terminado</option>
                         </select>
                     </div>
                 </div>
