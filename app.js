@@ -11,6 +11,28 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUsers();
     loadTasks();
     setupEventListeners();
+    
+    // Asegurar que las funciones están en el scope global
+    window.openTaskDetails = openTaskDetails;
+    window.openEditEntryModal = openEditEntryModal;
+    window.openCreateTaskModal = openCreateTaskModal;
+    window.editTask = editTask;
+    window.deleteTask = deleteTask;
+    window.deleteUser = deleteUser;
+    window.toggleTimeForm = toggleTimeForm;
+    window.toggleAnnotationForm = toggleAnnotationForm;
+    window.addTimeEntry = addTimeEntry;
+    window.saveTimeEntry = saveTimeEntry;
+    window.editTimeEntry = editTimeEntry;
+    window.cancelEditTimeEntry = cancelEditTimeEntry;
+    window.deleteTimeEntry = deleteTimeEntry;
+    window.deleteTimeEntryFromList = deleteTimeEntryFromList;
+    window.addAnnotation = addAnnotation;
+    window.saveAnnotation = saveAnnotation;
+    window.editAnnotation = editAnnotation;
+    window.cancelEditAnnotation = cancelEditAnnotation;
+    window.deleteAnnotation = deleteAnnotation;
+    window.closeModal = closeModal;
 });
 
 // Event Listeners
@@ -42,6 +64,15 @@ function setupEventListeners() {
     ['editTaskMonths', 'editTaskDays', 'editTaskMinutes'].forEach(id => {
         document.getElementById(id).addEventListener('input', calculateEditTotalMinutes);
     });
+    
+    // Formulario de edición de registro de tiempo
+    const editEntryForm = document.getElementById('editEntryForm');
+    if (editEntryForm) {
+        editEntryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleEditEntrySubmit();
+        });
+    }
 }
 
 // Funciones de navegación
@@ -703,11 +734,22 @@ async function openTaskDetails(taskId) {
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        // Manejar modales con clase 'active'
-        modal.classList.remove('active');
-        // Manejar modales con style.display
-        modal.style.display = 'none';
-        currentTaskId = null;
+        // Modales que usan clase 'active' (NO usar style.display)
+        if (modalId === 'taskModal' || modalId === 'createTaskModal' || modalId === 'editTaskModal' || modalId === 'userModal') {
+            modal.classList.remove('active');
+            if (modalId === 'taskModal') {
+                currentTaskId = null;
+            }
+        }
+        // Modal de edición de registros que usa style.display
+        else if (modalId === 'editEntryModal') {
+            modal.style.display = 'none';
+        }
+        // Fallback: intentar ambos métodos
+        else {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
     }
 }
 
@@ -1207,16 +1249,27 @@ function formatDateTime(dateTimeString) {
     });
 }
 
-// Cerrar modal al hacer clic fuera
-window.onclick = function(event) {
+// Cerrar modal al hacer clic fuera (usando addEventListener para no sobrescribir)
+window.addEventListener('click', function(event) {
+    // Solo cerrar si el click es EXACTAMENTE en el modal (el fondo oscuro)
+    // No si es en el contenido del modal
     if (event.target.classList.contains('modal')) {
-        // Cerrar modales con clase 'active'
-        event.target.classList.remove('active');
-        // Cerrar modales con style.display
-        event.target.style.display = 'none';
-        currentTaskId = null;
+        const modalId = event.target.id;
+        
+        // Para modales de tareas/usuarios que usan clase 'active'
+        if (modalId === 'taskModal' || modalId === 'createTaskModal' || modalId === 'editTaskModal' || modalId === 'userModal') {
+            event.target.classList.remove('active');
+            if (modalId === 'taskModal') {
+                currentTaskId = null;
+            }
+        }
+        // Para modal de edición de registros que usa style.display
+        else if (modalId === 'editEntryModal') {
+            event.target.style.display = 'none';
+        }
     }
-}
+});
+
 
 // ==================== INFORME DE REGISTROS DE TIEMPO ====================
 
@@ -1618,10 +1671,8 @@ async function openEditEntryModal(entryId) {
     }
 }
 
-// Manejar envío del formulario de edición
-document.getElementById('editEntryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
+// Manejar envío del formulario de edición de registro
+async function handleEditEntrySubmit() {
     const entryId = document.getElementById('editEntryId').value;
     const startTime = document.getElementById('editEntryStartTime').value;
     const endTime = document.getElementById('editEntryEndTime').value;
@@ -1649,8 +1700,9 @@ document.getElementById('editEntryForm').addEventListener('submit', async (e) =>
         
         if (response.ok) {
             alert('Registro actualizado exitosamente');
-            document.getElementById('editEntryModal').style.display = 'none'; // Cerrar modal explícitamente
-            loadTimeEntries(); // Recargar la lista
+            document.getElementById('editEntryModal').style.display = 'none';
+            await loadTasks(); // Recargar tareas para mantener datos actualizados
+            loadTimeEntries(); // Recargar listado de registros
         } else {
             const errorData = await response.json();
             alert('Error al actualizar: ' + (errorData.detail || 'Error desconocido'));
@@ -1659,9 +1711,9 @@ document.getElementById('editEntryForm').addEventListener('submit', async (e) =>
         console.error('Error actualizando registro:', error);
         alert('Error al actualizar el registro');
     }
-});
+}
 
-async function deleteTimeEntry() {
+async function deleteTimeEntryFromList() {
     const entryId = document.getElementById('editEntryId').value;
     
     if (!confirm('¿Estás seguro de que quieres eliminar este registro de tiempo?')) {
@@ -1675,7 +1727,8 @@ async function deleteTimeEntry() {
         
         if (response.ok) {
             alert('Registro eliminado exitosamente');
-            document.getElementById('editEntryModal').style.display = 'none'; // Cerrar modal explícitamente
+            document.getElementById('editEntryModal').style.display = 'none';
+            await loadTasks(); // Recargar tareas para mantener datos actualizados
             loadTimeEntries(); // Recargar la lista
         } else {
             const errorData = await response.json();
