@@ -1616,7 +1616,8 @@ function initializeEntriesTab() {
     const weekAgoStr = weekAgo.toISOString().split('T')[0];
     
     document.getElementById('filterEntriesToDate').value = todayStr;
-    document.getElementById('filterEntriesFromDate').value = weekAgoStr;
+    //document.getElementById('filterEntriesFromDate').value = weekAgoStr;
+    document.getElementById('filterEntriesFromDate').value = todayStr;
     
     // Poblar selector de usuarios
     updateUserFilter('filterEntriesUser');

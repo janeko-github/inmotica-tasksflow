@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source  venv/bin/activate
 echo "========================================"
 echo "   Inmotica TaskFlow v2.0"
 echo "   Sistema de Gestión de Tareas"
